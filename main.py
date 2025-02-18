@@ -1,6 +1,11 @@
 import asyncio
+import subprocess
+import sys
+import semaforo
 from simulacion_sensor import generar_data_trafico
 from logica_trafico import calcular_tiempo_verde, store_data_trafico  
+
+subprocess.Popen([sys.executable, "semaforo.py"])
 
 async def control_semaforo():
     while True:
