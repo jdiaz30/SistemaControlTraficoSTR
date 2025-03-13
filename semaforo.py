@@ -15,37 +15,47 @@ async def control_semaforo():
     - Verde: 4 segundos (permitido el paso).
     - Amarillo: 2 segundos (precaución).
     - Rojo: 4 segundos (alto).
-    
+
     La información se publica en Redis para que otros procesos puedan suscribirse a los cambios.
     """
-    redis_client = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
+    try:
+        # Intentar conectarse a Redis
+        redis_client = redis.Redis(host=REDIS_HOST, port=6379, decode_responses=True)
+        await redis_client.ping()  # Prueba si Redis está accesible
+        print("✅ Conexión establecida con Redis.")
+        
+        # Estado inicial del semáforo
+        semaforo = {"Verde": True, "Amarillo": False, "Rojo": False}
 
-    # Estado inicial del semáforo
-    semaforo = {"Verde": True, "Amarillo": False, "Rojo": False}
+        while True:
+            print("\n---- SEMÁFORO ----")
 
-    while True:
-        print("\n---- SEMÁFORO ----")
+            # Fase Verde: Permite el paso
+            if semaforo["Verde"]:
+                print("🚦 Semáforo en VERDE (Paso permitido)")
+                await redis_client.publish(REDIS_CHANNEL, "Verde")  # Publica en Redis el estado del semáforo
+                semaforo = {"Verde": False, "Amarillo": True, "Rojo": False}  # Cambia al siguiente estado
+                await asyncio.sleep(4)  # Tiempo de luz verde
 
-        # Fase Verde: Permite el paso
-        if semaforo["Verde"]:
-            print("🚦 Semáforo en VERDE (Paso permitido)")
-            await redis_client.publish(REDIS_CHANNEL, "Verde")  # Publica en Redis el estado del semáforo
-            semaforo = {"Verde": False, "Amarillo": True, "Rojo": False}  # Cambia al siguiente estado
-            await asyncio.sleep(4)  # Tiempo de luz verde
+            # Fase Amarilla: Precaución
+            elif semaforo["Amarillo"]:
+                print("⚠️ Semáforo en AMARILLO (Precaución)")
+                await redis_client.publish(REDIS_CHANNEL, "Amarillo")
+                semaforo = {"Verde": False, "Amarillo": False, "Rojo": True}
+                await asyncio.sleep(2)  # Tiempo de luz amarilla
 
-        # Fase Amarilla: Precaución
-        elif semaforo["Amarillo"]:
-            print("⚠️ Semáforo en AMARILLO (Precaución)")
-            await redis_client.publish(REDIS_CHANNEL, "Amarillo")
-            semaforo = {"Verde": False, "Amarillo": False, "Rojo": True}
-            await asyncio.sleep(2)  # Tiempo de luz amarilla
+            # Fase Roja: Alto
+            elif semaforo["Rojo"]:
+                print("🛑 Semáforo en ROJO (Alto)")
+                await redis_client.publish(REDIS_CHANNEL, "Rojo")
+                semaforo = {"Verde": True, "Amarillo": False, "Rojo": False}
+                await asyncio.sleep(4)  # Tiempo de luz roja
 
-        # Fase Roja: Alto
-        elif semaforo["Rojo"]:
-            print("🛑 Semáforo en ROJO (Alto)")
-            await redis_client.publish(REDIS_CHANNEL, "Rojo")
-            semaforo = {"Verde": True, "Amarillo": False, "Rojo": False}
-            await asyncio.sleep(4)  # Tiempo de luz roja
+    except redis.exceptions.ConnectionError:
+        print("❌ Error: No se pudo conectar con Redis. Asegúrate de que el servidor Redis está en ejecución.")
+
+    except Exception as e:
+        print(f"❌ Error inesperado en el semáforo: {e}")
 
 async def main():
     """

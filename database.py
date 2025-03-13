@@ -17,18 +17,25 @@ async def setup_database():
     La función usa `aiosqlite` para permitir acceso asíncrono a la base de datos,
     evitando bloqueos en otras operaciones concurrentes del sistema.
     """
-    async with aiosqlite.connect("data_trafico.db") as conn:
-        await conn.execute("""
-            CREATE TABLE IF NOT EXISTS data_trafico (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                interseccion TEXT,
-                vehicle_count INTEGER,
-                tiempo_verde INTEGER,
-                timestamp TEXT
-            )
-        """)
-        await conn.commit()  # Guarda los cambios en la base de datos
-        print("Base de datos inicializada correctamente.")  # Mensaje de confirmación
+    try:
+        async with aiosqlite.connect("data_trafico.db") as conn:
+            await conn.execute("""
+                CREATE TABLE IF NOT EXISTS data_trafico (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    interseccion TEXT,
+                    vehicle_count INTEGER,
+                    tiempo_verde INTEGER,
+                    timestamp TEXT
+                )
+            """)
+            await conn.commit()  # Guarda los cambios en la base de datos
+            print("✅ Base de datos inicializada correctamente.")  # Mensaje de confirmación
+
+    except aiosqlite.Error as e:
+        print(f"❌ Error en la configuración de la base de datos: {e}")
+
+    except Exception as e:
+        print(f"❌ Error inesperado: {e}")
 
 if __name__ == "__main__":
     # Ejecuta la configuración de la base de datos si el script se ejecuta directamente

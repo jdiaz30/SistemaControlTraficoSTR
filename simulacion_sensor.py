@@ -16,11 +16,15 @@ async def generar_data_trafico(id_sensor):
     espera un tiempo aleatorio antes de la siguiente medición.
     """
     while True:
-        data = {
-            "interseccion": random.choice(intersecciones),  # Selecciona una intersección aleatoria
-            "vehicle_count": random.randint(0, 50),  # Número aleatorio de vehículos detectados
-        }
-        print(f"Sensor {id_sensor}: {data}")  # Imprime la información generada
+        try:
+            data = {
+                "interseccion": random.choice(intersecciones),  # Selecciona una intersección aleatoria
+                "vehicle_count": random.randint(0, 50),  # Número aleatorio de vehículos detectados
+            }
+            print(f"✅ Sensor {id_sensor}: {data}")  # Imprime la información generada
+        except Exception as e:
+            print(f"❌ Error en el sensor {id_sensor}: {e}")
+
         await asyncio.sleep(random.randint(3, 7))  # Espera entre 3 y 7 segundos antes de la próxima medición
 
 async def main():
@@ -29,9 +33,13 @@ async def main():
     
     Cada sensor simula la captura de datos de tráfico en una intersección distinta.
     """
-    numero_sensores = len(intersecciones)  # Determina la cantidad de sensores según la lista de intersecciones
-    tareas = [generar_data_trafico(i+1) for i in range(numero_sensores)]  # Crea tareas asíncronas para cada sensor
-    await asyncio.gather(*tareas)  # Ejecuta todas las tareas en paralelo
+    try:
+        numero_sensores = len(intersecciones)  # Determina la cantidad de sensores según la lista de intersecciones
+        tareas = [generar_data_trafico(i+1) for i in range(numero_sensores)]  # Crea tareas asíncronas para cada sensor
+        await asyncio.gather(*tareas)  # Ejecuta todas las tareas en paralelo
+
+    except Exception as e:
+        print(f"❌ Error en la ejecución de los sensores: {e}")
 
 if __name__ == "__main__":
     # Ejecuta la simulación de tráfico si el script se ejecuta directamente
